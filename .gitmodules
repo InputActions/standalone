@@ -1,0 +1,6 @@
+[submodule "lib/core"]
+	path = lib/core
+	url = https://github.com/InputActions/core
+[submodule "lib/libinput-cpp"]
+	path = lib/libinput-cpp
+	url = https://github.com/InputActions/libinput-cpp
