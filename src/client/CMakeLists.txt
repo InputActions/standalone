@@ -25,7 +25,7 @@ target_include_directories(inputactions-client PRIVATE
     ..
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
 )
-target_compile_definitions(inputactions-client PRIVATE INPUTACTIONS_DATA_DIR="${INPUTACTIONS_DATA_DIR}")
+target_compile_definitions(inputactions-client PRIVATE INPUTACTIONS_DATA_DIR="${CMAKE_INSTALL_PREFIX}/${INPUTACTIONS_DATA_DIR}")
 
 set(PROTOCOL_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/protocols)
 file(MAKE_DIRECTORY ${PROTOCOL_OUTPUT_DIR})
