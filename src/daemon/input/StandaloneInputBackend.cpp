@@ -34,6 +34,7 @@
 #include <libinputactions/input/events.h>
 #include <linux/uinput.h>
 #include <sys/inotify.h>
+#include <unistd.h>
 
 namespace InputActions
 {
