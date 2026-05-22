@@ -94,11 +94,11 @@ jobs:
       - name: Build
         run: cmake --build "${GITHUB_WORKSPACE}/build" -j$(nproc)
 
-  build_fedora_43:
-    name: Build (Fedora 43)
+  build_fedora_44:
+    name: Build (Fedora 44)
     runs-on: ubuntu-latest
     container:
-      image: fedora:43 # zizmor: ignore[unpinned-images]
+      image: fedora:44 # zizmor: ignore[unpinned-images]
       options: --user root
 
     steps:
@@ -128,7 +128,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Install Nix
-        uses: cachix/install-nix-action@19effe9fe722874e6d46dd7182e4b8b7a43c4a99 # v31.10.0
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
