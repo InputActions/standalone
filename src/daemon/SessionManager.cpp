@@ -29,7 +29,7 @@
 #include <libinputactions/input/StrokeRecorder.h>
 #include <libinputactions/interfaces/implementations/FileConfigProvider.h>
 #include <libinputactions-standalone-ipc/MessageSocketConnection.h>
-#include <libinputactions/variables/VariableManager.h>
+#include <libinputactions/variables/VariableRegistry.h>
 #include <pwd.h>
 #include <sys/socket.h>
 #include <utmp.h>
@@ -170,8 +170,8 @@ void SessionManager::beginSessionRequestMessage(const std::shared_ptr<const Begi
     } else {
         session.m_client = message->sender();
         session.m_ipcEnvironmentInterfaces = std::make_shared<IPCEnvironmentInterfaces>();
-        session.m_variableManager = std::make_shared<VariableManager>();
-        g_inputActions->registerGlobalVariables(session.m_variableManager.get(), session.m_ipcEnvironmentInterfaces, session.m_ipcEnvironmentInterfaces);
+        session.m_variableRegistry = std::make_shared<VariableRegistry>();
+        g_inputActions->registerGlobalVariables(session.m_variableRegistry.get(), session.m_ipcEnvironmentInterfaces, session.m_ipcEnvironmentInterfaces);
 
         if (SessionHelpers::currentTty() == message->tty()) {
             activateSession(session, false);
@@ -297,7 +297,7 @@ void SessionManager::variableListRequestMessage(const std::shared_ptr<const Vari
 {
     if (auto *session = sessionForClient(message->sender())) {
         auto response = message->makeResponse();
-        response.setResult(m_dbusInterfaceBase.variableList(session->m_variableManager.get(), message->filter()));
+        response.setResult(m_dbusInterfaceBase.variableList(session->m_variableRegistry.get(), message->filter()));
         message->reply(response);
     }
 }
@@ -324,7 +324,7 @@ void SessionManager::activateSession(Session &session, bool loadConfig)
     }
 
     g_pointerPositionGetter = session.m_ipcEnvironmentInterfaces;
-    g_variableManager = session.m_variableManager;
+    g_variableRegistry = session.m_variableRegistry;
     g_windowProvider = session.m_ipcEnvironmentInterfaces;
 }
 
