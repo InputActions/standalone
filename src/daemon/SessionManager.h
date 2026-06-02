@@ -33,7 +33,7 @@ class IPCEnvironmentInterfaces;
 class Message;
 class MessageSocketConnection;
 class Server;
-class VariableManager;
+class VariableRegistry;
 
 class Session
 {
@@ -47,7 +47,7 @@ private:
     bool m_suspended{};
 
     std::shared_ptr<IPCEnvironmentInterfaces> m_ipcEnvironmentInterfaces;
-    std::shared_ptr<VariableManager> m_variableManager;
+    std::shared_ptr<VariableRegistry> m_variableRegistry;
 
     friend class SessionManager;
 };
