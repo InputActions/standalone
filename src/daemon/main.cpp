@@ -30,6 +30,7 @@
 #include <libinputactions/globals.h>
 #include <libinputactions/interfaces/ConfigProvider.h>
 #include <libinputactions/interfaces/NotificationManager.h>
+#include <libinputactions/scripting/ScriptingEngine.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 
@@ -47,6 +48,8 @@ void handleSignal(int signal)
 
 int main()
 {
+    ScriptingEngine::disabled = true;
+
     if (geteuid()) {
         qCritical() << "The daemon must be run as root.";
         return -1;

@@ -308,7 +308,7 @@ void StandaloneInputDevice::restoreVirtualDeviceState()
     }
 }
 
-void StandaloneInputDevice::touchscreenTapDown(const std::vector<QPointF> &points)
+void StandaloneInputDevice::touchscreenTapDown(const std::vector<PointF> &points)
 {
     if (!properties().grab()) {
         return;
@@ -327,7 +327,7 @@ void StandaloneInputDevice::touchscreenTapDown(const std::vector<QPointF> &point
     m_outputDevice->writeSynReportEvent();
 }
 
-void StandaloneInputDevice::touchscreenTapUp(const std::vector<QPointF> &points)
+void StandaloneInputDevice::touchscreenTapUp(const std::vector<PointF> &points)
 {
     if (!properties().grab()) {
         return;
