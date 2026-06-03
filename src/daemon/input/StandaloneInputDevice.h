@@ -95,8 +95,8 @@ public:
     void restoreVirtualDeviceState() override;
 
 protected:
-    void touchscreenTapDown(const std::vector<QPointF> &points) override;
-    void touchscreenTapUp(const std::vector<QPointF> &points) override;
+    void touchscreenTapDown(const std::vector<PointF> &points) override;
+    void touchscreenTapUp(const std::vector<PointF> &points) override;
 
 private:
     StandaloneInputDevice(InputDeviceType type, QString name, QString sysName, QString path, std::unique_ptr<libinput::PathContext> libinput,

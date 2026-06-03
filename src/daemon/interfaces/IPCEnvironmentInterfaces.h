@@ -65,8 +65,8 @@ public:
     std::shared_ptr<Window> activeWindow() override;
     std::shared_ptr<Window> windowUnderPointer() override;
 
-    std::optional<QPointF> globalPointerPosition() override;
-    std::optional<QPointF> screenPointerPosition() override;
+    std::optional<PointF> globalPointerPosition() override;
+    std::optional<PointF> screenPointerPosition() override;
 
     void updateEnvironmentState(const QString &json);
 
@@ -74,8 +74,8 @@ private:
     std::shared_ptr<IPCWindow> m_activeWindow;
     std::shared_ptr<IPCWindow> m_windowUnderPointer;
 
-    std::optional<QPointF> m_globalPointerPosition;
-    std::optional<QPointF> m_screenPointerPosition;
+    std::optional<PointF> m_globalPointerPosition;
+    std::optional<PointF> m_screenPointerPosition;
 };
 
 }

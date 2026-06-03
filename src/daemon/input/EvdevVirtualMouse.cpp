@@ -64,7 +64,7 @@ void EvdevVirtualMouse::mouseButton(MouseButton button, bool state)
     VirtualMouse::mouseButton(button, state);
 }
 
-void EvdevVirtualMouse::mouseMotion(const QPointF &pos)
+void EvdevVirtualMouse::mouseMotion(const PointF &pos)
 {
     if (!m_device) {
         return;
@@ -87,7 +87,7 @@ void EvdevVirtualMouse::mouseMotion(const QPointF &pos)
     }
 }
 
-void EvdevVirtualMouse::mouseWheel(const QPointF &delta)
+void EvdevVirtualMouse::mouseWheel(const PointF &delta)
 {
     if (!m_device) {
         return;

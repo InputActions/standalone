@@ -33,14 +33,14 @@ public:
     QString path() const;
 
     void mouseButton(MouseButton button, bool state) override;
-    void mouseMotion(const QPointF &pos) override;
-    void mouseWheel(const QPointF &delta) override;
+    void mouseMotion(const PointF &pos) override;
+    void mouseWheel(const PointF &delta) override;
 
 private:
     std::optional<libevdev::UInputDevice> m_device;
 
-    QPointF m_motionDelta;
-    QPointF m_wheelDelta;
+    PointF m_motionDelta;
+    PointF m_wheelDelta;
 };
 
 }

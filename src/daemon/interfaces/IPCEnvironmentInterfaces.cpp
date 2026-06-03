@@ -139,12 +139,12 @@ std::optional<bool> IPCWindow::fullscreen()
     return m_fullscreen;
 }
 
-std::optional<QPointF> IPCEnvironmentInterfaces::globalPointerPosition()
+std::optional<PointF> IPCEnvironmentInterfaces::globalPointerPosition()
 {
     return m_globalPointerPosition;
 }
 
-std::optional<QPointF> IPCEnvironmentInterfaces::screenPointerPosition()
+std::optional<PointF> IPCEnvironmentInterfaces::screenPointerPosition()
 {
     return m_screenPointerPosition;
 }

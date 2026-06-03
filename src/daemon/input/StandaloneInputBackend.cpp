@@ -264,7 +264,7 @@ bool StandaloneInputBackend::handleEvent(StandaloneInputDevice *sender, const li
                     static const auto axis = [](const auto &pointerEvent, const auto axis) {
                         return pointerEvent->hasAxis(axis) ? pointerEvent->axisValue(axis) : 0;
                     };
-                    const QPointF delta(axis(pointerEvent, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL), axis(pointerEvent, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL));
+                    const PointF delta(axis(pointerEvent, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL), axis(pointerEvent, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL));
                     return pointerAxis(sender, delta);
                 }
                 case LIBINPUT_EVENT_POINTER_BUTTON: {
@@ -286,17 +286,17 @@ bool StandaloneInputBackend::handleEvent(StandaloneInputDevice *sender, const li
             switch (type) {
                 case LIBINPUT_EVENT_TOUCH_DOWN: {
                     const auto slot = touchEvent->slot();
-                    QPointF rawPosition;
+                    PointF rawPosition;
                     if (sender->libevdev()) {
-                        rawPosition = QPointF(sender->libevdev()->slotValue(slot, ABS_MT_POSITION_X), sender->libevdev()->slotValue(slot, ABS_MT_POSITION_Y));
+                        rawPosition = PointF(sender->libevdev()->slotValue(slot, ABS_MT_POSITION_X), sender->libevdev()->slotValue(slot, ABS_MT_POSITION_Y));
                     }
                     return touchscreenTouchDown(sender, slot, touchEvent->position(), rawPosition);
                 }
                 case LIBINPUT_EVENT_TOUCH_MOTION: {
                     const auto slot = touchEvent->slot();
-                    QPointF rawPosition;
+                    PointF rawPosition;
                     if (sender->libevdev()) {
-                        rawPosition = QPointF(sender->libevdev()->slotValue(slot, ABS_MT_POSITION_X), sender->libevdev()->slotValue(slot, ABS_MT_POSITION_Y));
+                        rawPosition = PointF(sender->libevdev()->slotValue(slot, ABS_MT_POSITION_X), sender->libevdev()->slotValue(slot, ABS_MT_POSITION_Y));
                     }
                     return touchscreenTouchMotion(sender, slot, touchEvent->position(), rawPosition);
                 }
