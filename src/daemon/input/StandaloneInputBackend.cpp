@@ -64,9 +64,9 @@ StandaloneInputBackend::~StandaloneInputBackend()
     reset();
 }
 
-void StandaloneInputBackend::initialize()
+void StandaloneInputBackend::doInitialize()
 {
-    LibinputInputBackend::initialize();
+    LibinputInputBackend::doInitialize();
 
     m_virtualKeyboard.emplace(virtualKeyboardKeys());
     m_virtualMouse.emplace();

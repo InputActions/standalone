@@ -26,6 +26,7 @@
 #include <libinputactions/config/ConfigLoader.h>
 #include <libinputactions/globals.h>
 #include <libinputactions/helpers/Session.h>
+#include <libinputactions/input/backends/InputBackend.h>
 #include <libinputactions/input/StrokeRecorder.h>
 #include <libinputactions/interfaces/implementations/FileConfigProvider.h>
 #include <libinputactions-standalone-ipc/MessageSocketConnection.h>
@@ -268,6 +269,11 @@ void SessionManager::recordStrokeRequestMessage(const std::shared_ptr<const Reco
         if (&currentSession() != session) {
             auto response = message->makeResponse();
             response.setError(ERROR_SESSION_INACTIVE);
+            message->reply(response);
+            return;
+        } else if (!g_inputBackend->initialized()) {
+            auto response = message->makeResponse();
+            response.setError("Stroke recording requires a valid configuration to be active.");
             message->reply(response);
             return;
         }
