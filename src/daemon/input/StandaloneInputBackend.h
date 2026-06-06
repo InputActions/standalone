@@ -48,8 +48,10 @@ public:
     VirtualKeyboard *virtualKeyboard() override;
     VirtualMouse *virtualMouse() override;
 
-    void initialize() override;
     void reset() final;
+
+protected:
+    void doInitialize() override;
 
 private slots:
     void inotifyTimerTick();
