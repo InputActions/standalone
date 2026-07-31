@@ -61,47 +61,23 @@ std::shared_ptr<Message> JsonSerializer::deserializeMessage(const QString &json)
 
     std::shared_ptr<Message> message;
     switch (static_cast<MessageType>(type.toInt())) {
-        case MessageType::BeginSessionRequest:
-            message = std::make_shared<BeginSessionRequestMessage>();
+        case MessageType::CInitializeRequest:
+            message = std::make_shared<CInitializeRequestMessage>();
             break;
-        case MessageType::ConfigIssuesRequest:
-            message = std::make_shared<ConfigIssuesRequestMessage>();
+        case MessageType::SInitializeResponse:
+            message = std::make_shared<SInitializeResponseMessage>();
             break;
-        case MessageType::DeviceListRequest:
-            message = std::make_shared<DeviceListRequestMessage>();
+        case MessageType::SActivateRequest:
+            message = std::make_shared<SActivateRequestMessage>();
             break;
-        case MessageType::EnvironmentState:
-            message = std::make_shared<EnvironmentStateMessage>();
+        case MessageType::CActivateResponse:
+            message = std::make_shared<CActivateResponseMessage>();
             break;
-        case MessageType::GenericResponse:
-            message = std::make_shared<ResponseMessage>();
+        case MessageType::SDeactivateRequest:
+            message = std::make_shared<SDeactivateRequestMessage>();
             break;
-        case MessageType::HandshakeRequest:
-            message = std::make_shared<HandshakeRequestMessage>();
-            break;
-        case MessageType::InvokePlasmaGlobalShortcutRequest:
-            message = std::make_shared<InvokePlasmaGlobalShortcutRequestMessage>();
-            break;
-        case MessageType::LoadConfigRequest:
-            message = std::make_shared<LoadConfigRequestMessage>();
-            break;
-        case MessageType::RecordStrokeRequest:
-            message = std::make_shared<RecordStrokeRequestMessage>();
-            break;
-        case MessageType::SendNotification:
-            message = std::make_shared<SendNotificationMessage>();
-            break;
-        case MessageType::SimpleStringResponse:
-            message = std::make_shared<SimpleStringResponseMessage>();
-            break;
-        case MessageType::StartProcessRequest:
-            message = std::make_shared<StartProcessRequestMessage>();
-            break;
-        case MessageType::SuspendRequest:
-            message = std::make_shared<SuspendRequestMessage>();
-            break;
-        case MessageType::VariableListRequest:
-            message = std::make_shared<VariableListRequestMessage>();
+        case MessageType::CDeactivateResponse:
+            message = std::make_shared<CDeactivateResponseMessage>();
             break;
     }
     Q_ASSERT(message);

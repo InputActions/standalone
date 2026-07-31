@@ -18,18 +18,18 @@
 
 #pragma once
 
+#include <QDBusConnection>
 #include <QObject>
 #include <libinputactions/interfaces/PointerPositionGetter.h>
 #include <libinputactions/interfaces/Window.h>
 #include <libinputactions/interfaces/WindowProvider.h>
-#include <libinputactions-standalone-ipc/MessageHandler.h>
 
 namespace InputActions
 {
 
 class Server;
 
-class IPCWindow : public Window
+class DBusWindow : public Window
 {
 public:
     std::optional<QString> id() override;
@@ -52,15 +52,19 @@ public:
 };
 
 /**
- * A set of interfaces for interacting with and getting the state of the environment through IPC.
+ * Temporary interface, it will be rewritten in the future.
  */
-class IPCEnvironmentInterfaces
+class DBusEnvironmentStateProvider
     : public QObject
     , public PointerPositionGetter
     , public WindowProvider
 {
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.inputactions.standalone.DBusEnvironmentStateProvider")
+
 public:
-    IPCEnvironmentInterfaces();
+    DBusEnvironmentStateProvider();
+    ~DBusEnvironmentStateProvider() override;
 
     std::shared_ptr<Window> activeWindow() override;
     std::shared_ptr<Window> windowUnderPointer() override;
@@ -68,14 +72,20 @@ public:
     std::optional<PointF> globalPointerPosition() override;
     std::optional<PointF> screenPointerPosition() override;
 
-    void updateEnvironmentState(const QString &json);
+public slots:
+    void updateState(const QString &json);
+
+signals:
+    void stateRequested();
 
 private:
-    std::shared_ptr<IPCWindow> m_activeWindow;
-    std::shared_ptr<IPCWindow> m_windowUnderPointer;
+    std::shared_ptr<DBusWindow> m_activeWindow;
+    std::shared_ptr<DBusWindow> m_windowUnderPointer;
 
     std::optional<PointF> m_globalPointerPosition;
     std::optional<PointF> m_screenPointerPosition;
+
+    QDBusConnection m_bus;
 };
 
 }

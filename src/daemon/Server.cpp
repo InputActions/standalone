@@ -20,7 +20,7 @@
 #include <QCoreApplication>
 #include <QLocalServer>
 #include <QThread>
-#include <libinputactions-standalone-ipc/MessageSocketConnection.h>
+#include <libinputactions-standalone-common/ipc/MessageSocketConnection.h>
 #include <sys/stat.h>
 
 namespace InputActions
@@ -52,9 +52,6 @@ void Server::onNewConnection()
     auto *qtSocket = m_server->nextPendingConnection();
     auto *socket = new MessageSocketConnection(qtSocket, this);
 
-    connect(qtSocket, &QLocalSocket::disconnected, this, [socket]() {
-        socket->deleteLater();
-    });
     connect(socket, &MessageSocketConnection::messageReceived, this, [this](const auto &message) {
         Q_EMIT messageReceived(message);
     });

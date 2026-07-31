@@ -24,8 +24,8 @@
 namespace InputActions
 {
 
-WaylandClient::WaylandClient(Client *client)
-    : m_client(client)
+WaylandClient::WaylandClient(DBusEnvironmentStateProvider &dbusEnvironmentStateProvider)
+    : m_dbusEnvironmentStateProvider(dbusEnvironmentStateProvider)
 {
     connect(&m_displayDispatchTimer, &QTimer::timeout, this, &WaylandClient::onDisplayDispatchTimerTick);
     m_displayDispatchTimer.setInterval(100);
@@ -41,7 +41,7 @@ bool WaylandClient::initialize()
     }
 
     m_protocolManager = std::make_unique<WaylandProtocolManager>(wl_display_get_registry(m_display));
-    m_protocolManager->addProtocol(std::make_unique<WlrForeignToplevelManagementV1>(m_client));
+    m_protocolManager->addProtocol(std::make_unique<WlrForeignToplevelManagementV1>(m_dbusEnvironmentStateProvider));
     m_displayDispatchTimer.start();
     return true;
 }

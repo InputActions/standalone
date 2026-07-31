@@ -17,18 +17,16 @@
 */
 
 #include "WlrForeignToplevelManagementV1.h"
-#include "Client.h"
+#include "interfaces/DBusEnvironmentStateProvider.h"
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <libinputactions-standalone-ipc/MessageSocketConnection.h>
-#include <libinputactions-standalone-ipc/messages.h>
 
 namespace InputActions
 {
 
-WlrForeignToplevelManagementV1::WlrForeignToplevelManagementV1(Client *client)
+WlrForeignToplevelManagementV1::WlrForeignToplevelManagementV1(DBusEnvironmentStateProvider &dbusEnvironmentStateProvider)
     : WaylandProtocol(zwlr_foreign_toplevel_manager_v1_interface.name)
-    , m_client(client)
+    , m_dbusEnvironmentStateProvider(dbusEnvironmentStateProvider)
 {
     self = this;
 }
@@ -137,15 +135,13 @@ void WlrForeignToplevelManagementV1::handleDone(void *data, zwlr_foreign_topleve
         return;
     }
 
+    // No point on doing this the right way, it's getting rewritten in the future anyways
     QJsonObject json;
     json["active_window_class"] = window->resourceClass;
     json["active_window_fullscreen"] = window->fullscreen;
     json["active_window_maximized"] = window->maximized;
     json["active_window_title"] = window->title;
-
-    EnvironmentStateMessage message;
-    message.setStateJson(QJsonDocument(json).toJson(QJsonDocument::JsonFormat::Compact));
-    self->m_client->socketConnection()->sendMessage(message);
+    self->m_dbusEnvironmentStateProvider.updateState(QJsonDocument(json).toJson(QJsonDocument::JsonFormat::Compact));
 }
 
 }

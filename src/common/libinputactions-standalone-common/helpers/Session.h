@@ -16,20 +16,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "IPCPlasmaGlobalShortcutInvoker.h"
-#include "SessionManager.h"
-#include <libinputactions-standalone-ipc/MessageSocketConnection.h>
-#include <libinputactions-standalone-ipc/messages.h>
+#pragma once
 
-namespace InputActions
+#include <QString>
+
+namespace InputActions::SessionHelpers
 {
 
-void IPCPlasmaGlobalShortcutInvoker::invoke(const QString &component, const QString &shortcut)
-{
-    InvokePlasmaGlobalShortcutRequestMessage message;
-    message.setComponent(component);
-    message.setShortcut(shortcut);
-    g_sessionManager->currentSession().client()->sendMessageAndWaitForResponse(message);
-}
+QString currentTty();
 
 }

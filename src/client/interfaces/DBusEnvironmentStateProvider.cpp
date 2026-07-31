@@ -16,32 +16,41 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "IPCEnvironmentInterfaces.h"
-#include "Server.h"
+#include "DBusEnvironmentStateProvider.h"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <libinputactions/helpers/QDBusConnection.h>
 
 namespace InputActions
 {
 
-IPCEnvironmentInterfaces::IPCEnvironmentInterfaces()
-    : m_activeWindow(std::make_unique<IPCWindow>())
-    , m_windowUnderPointer(std::make_unique<IPCWindow>())
+static const QString DBUS_OBJECT_PATH = "/org/inputactions/standalone/DBusEnvironmentStateProvider";
+
+DBusEnvironmentStateProvider::DBusEnvironmentStateProvider()
+    : m_activeWindow(std::make_unique<DBusWindow>())
+    , m_windowUnderPointer(std::make_unique<DBusWindow>())
+    , m_bus(QDBusConnectionHelpers::sessionBus())
 {
+    m_bus.registerObject(DBUS_OBJECT_PATH, this, QDBusConnection::ExportAllContents);
 }
 
-std::shared_ptr<Window> IPCEnvironmentInterfaces::activeWindow()
+DBusEnvironmentStateProvider::~DBusEnvironmentStateProvider()
+{
+    m_bus.unregisterObject(DBUS_OBJECT_PATH);
+}
+
+std::shared_ptr<Window> DBusEnvironmentStateProvider::activeWindow()
 {
     return m_activeWindow;
 }
 
-std::shared_ptr<Window> IPCEnvironmentInterfaces::windowUnderPointer()
+std::shared_ptr<Window> DBusEnvironmentStateProvider::windowUnderPointer()
 {
     return m_windowUnderPointer;
 }
 
-void IPCEnvironmentInterfaces::updateEnvironmentState(const QString &json)
+void DBusEnvironmentStateProvider::updateState(const QString &json)
 {
     const auto jsonDocument = QJsonDocument::fromJson(json.toUtf8());
     const auto object = jsonDocument.object();
@@ -99,52 +108,52 @@ void IPCEnvironmentInterfaces::updateEnvironmentState(const QString &json)
     readPoint(m_screenPointerPosition, object["pointer_position_screen_percentage"]);
 }
 
-std::optional<QString> IPCWindow::id()
+std::optional<QString> DBusWindow::id()
 {
     return m_id;
 }
 
-std::optional<pid_t> IPCWindow::pid()
+std::optional<pid_t> DBusWindow::pid()
 {
     return m_pid;
 }
 
-std::optional<QRectF> IPCWindow::geometry()
+std::optional<QRectF> DBusWindow::geometry()
 {
     return m_geometry;
 }
 
-std::optional<QString> IPCWindow::title()
+std::optional<QString> DBusWindow::title()
 {
     return m_title;
 }
 
-std::optional<QString> IPCWindow::resourceClass()
+std::optional<QString> DBusWindow::resourceClass()
 {
     return m_resourceClass;
 }
 
-std::optional<QString> IPCWindow::resourceName()
+std::optional<QString> DBusWindow::resourceName()
 {
     return m_resourceName;
 }
 
-std::optional<bool> IPCWindow::maximized()
+std::optional<bool> DBusWindow::maximized()
 {
     return m_maximized;
 }
 
-std::optional<bool> IPCWindow::fullscreen()
+std::optional<bool> DBusWindow::fullscreen()
 {
     return m_fullscreen;
 }
 
-std::optional<PointF> IPCEnvironmentInterfaces::globalPointerPosition()
+std::optional<PointF> DBusEnvironmentStateProvider::globalPointerPosition()
 {
     return m_globalPointerPosition;
 }
 
-std::optional<PointF> IPCEnvironmentInterfaces::screenPointerPosition()
+std::optional<PointF> DBusEnvironmentStateProvider::screenPointerPosition()
 {
     return m_screenPointerPosition;
 }
