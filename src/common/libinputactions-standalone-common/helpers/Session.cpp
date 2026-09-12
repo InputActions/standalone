@@ -16,20 +16,19 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "IPCNotificationManager.h"
-#include "SessionManager.h"
-#include <libinputactions-standalone-ipc/MessageSocketConnection.h>
-#include <libinputactions-standalone-ipc/messages.h>
+#include "Session.h"
+#include <QFile>
 
-namespace InputActions
+namespace InputActions::SessionHelpers
 {
 
-void IPCNotificationManager::sendNotification(const QString &title, const QString &content)
+QString currentTty()
 {
-    SendNotificationMessage message;
-    message.setTitle(title);
-    message.setContent(content);
-    g_sessionManager->currentSession().client()->sendMessage(message);
+    QFile f("/sys/class/tty/tty0/active");
+    if (f.open(QIODeviceBase::ReadOnly)) {
+        return QString::fromUtf8(f.readAll()).trimmed();
+    }
+    return "unknown";
 }
 
 }

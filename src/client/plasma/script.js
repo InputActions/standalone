@@ -76,7 +76,7 @@ function sendData(keys) {
         data[key] = dataAccessors[key]();
     }
 
-    callDBus("org.inputactions", "/", "org.inputactions", "environmentState", JSON.stringify(data));
+    callDBus("org.inputactions", "/org/inputactions/standalone/DBusEnvironmentStateProvider", "org.inputactions.standalone.DBusEnvironmentStateProvider", "updateState", JSON.stringify(data));
 }
 
 sendData([]);

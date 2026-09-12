@@ -18,15 +18,12 @@
 
 #pragma once
 
-#include "ClientDBusInterface.h"
 #include <QLocalSocket>
 #include <QObject>
-#include <libinputactions/interfaces/implementations/FileConfigProvider.h>
 
 namespace InputActions
 {
 
-class ClientDBusInterface;
 class Message;
 class MessageSocketConnection;
 
@@ -35,33 +32,23 @@ class Client : public QObject
     Q_OBJECT
 
 public:
-    Client();
-    ~Client() override;
-
     Q_INVOKABLE void start();
-    MessageSocketConnection *socketConnection() const;
-
-    FileConfigProvider configProvider;
 
 signals:
-    void connected();
-    void messageReceived(std::shared_ptr<Message> message);
+    void connected(MessageSocketConnection *connection);
+    void disconnected();
+    void messageReceived(std::shared_ptr<const Message> message);
 
 private slots:
     void onConnected();
     void onDisconnected();
     void onErrorOccurred(QLocalSocket::LocalSocketError error);
-    void onConfigChanged(const QString &config);
 
 private:
     void connectToDaemon();
 
     MessageSocketConnection *m_connection;
     QTimer *m_connectionRetryTimer{};
-
-    ClientDBusInterface m_dbusInterface;
-
-    QString m_currentTty;
 };
 
 }

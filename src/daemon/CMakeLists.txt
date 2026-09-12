@@ -1,30 +1,11 @@
-pkg_search_module(LIBINPUT REQUIRED libinput)
-pkg_search_module(LIBUDEV REQUIRED libudev)
-
 add_executable(inputactionsd
-    input/StandaloneInputBackend.cpp
-    input/StandaloneInputDevice.cpp
-    input/EvdevVirtualKeyboard.cpp
-    input/EvdevVirtualMouse.cpp
-    interfaces/IPCEnvironmentInterfaces.cpp
-    interfaces/IPCNotificationManager.cpp
-    interfaces/IPCPlasmaGlobalShortcutInvoker.cpp
-    interfaces/IPCProcessRunner.cpp
     main.cpp
     Server.cpp
-    SessionManager.cpp
+    ServerHandler.cpp
 )
 target_compile_options(inputactionsd PUBLIC -fexceptions)
 target_link_libraries(inputactionsd PRIVATE
-    libinput-cpp
-    libinputactions
-    libinputactions-standalone-ipc
-    ${LIBINPUT_LIBRARIES}
-    ${LIBUDEV_LIBRARIES}
-)
-target_include_directories(inputactionsd PUBLIC
-    ${LIBEVDEV_INCLUDE_DIRS}
-    ${LIBINPUT_INCLUDE_DIRS}
+    libinputactions-standalone-common
 )
 
 install(

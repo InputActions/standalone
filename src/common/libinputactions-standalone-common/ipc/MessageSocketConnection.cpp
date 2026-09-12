@@ -26,7 +26,7 @@ Q_LOGGING_CATEGORY(INPUTACTIONS_IPC, "inputactions.ipc", QtWarningMsg)
 namespace InputActions
 {
 
-static const std::chrono::milliseconds RESPONSE_TIMEOUT{10000L}; // Timeout must not be too low due to stroke recording
+static const std::chrono::milliseconds RESPONSE_TIMEOUT{2000L};
 
 MessageSocketConnection::MessageSocketConnection(QLocalSocket *socket, QObject *parent)
     : QObject(parent)
