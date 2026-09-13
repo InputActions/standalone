@@ -6,6 +6,7 @@ Type=simple
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/inputactionsd
 Restart=on-failure
 RestartSec=5s
+PAMName=login
 
 [Install]
 WantedBy=multi-user.target

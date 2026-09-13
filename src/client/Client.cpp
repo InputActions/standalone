@@ -17,24 +17,10 @@
 */
 
 #include "Client.h"
-#include "ClientDBusInterface.h"
-#include <QCoreApplication>
-#include <libinputactions/globals.h>
-#include <libinputactions/helpers/QThread.h>
-#include <libinputactions/helpers/Session.h>
-#include <libinputactions-standalone-ipc/MessageSocketConnection.h>
-#include <libinputactions-standalone-ipc/messages.h>
+#include <libinputactions-standalone-common/ipc/MessageSocketConnection.h>
 
 namespace InputActions
 {
-
-Client::Client()
-    : m_dbusInterface(this)
-    , m_currentTty(SessionHelpers::currentTty())
-{
-}
-
-Client::~Client() = default;
 
 void Client::start()
 {
@@ -45,66 +31,29 @@ void Client::start()
     auto socket = new QLocalSocket(this);
     m_connection = new MessageSocketConnection(socket, this);
 
-    connect(&configProvider, &ConfigProvider::configChanged, this, &Client::onConfigChanged);
     connect(socket, &QLocalSocket::connected, this, &Client::onConnected);
     connect(socket, &QLocalSocket::errorOccurred, this, &Client::onErrorOccurred);
+    connect(socket, &QLocalSocket::disconnected, this, &Client::onDisconnected);
     connect(m_connection, &MessageSocketConnection::messageReceived, this, &Client::messageReceived);
     socket->connectToServer(INPUTACTIONS_IPC_SOCKET_PATH);
-}
-
-MessageSocketConnection *Client::socketConnection() const
-{
-    return m_connection;
 }
 
 void Client::onConnected()
 {
     m_connectionRetryTimer->stop();
-    Q_EMIT connected();
-    QThreadHelpers::runOnThread(QThreadHelpers::mainThread(), [this]() {
-        HandshakeRequestMessage handshakeRequest;
-        if (const auto response = m_connection->sendMessageAndWaitForResponse(handshakeRequest); !response->success()) {
-            qCritical().noquote().nospace() << "Handshake failed: " << response->error();
-            QCoreApplication::exit(-1);
-            return;
-        }
-
-        BeginSessionRequestMessage beginSessionRequest;
-        beginSessionRequest.setTty(m_currentTty);
-        if (const auto response = m_connection->sendMessageAndWaitForResponse(beginSessionRequest)) {
-            if (!response->success()) {
-                qCritical().noquote().nospace() << "Daemon rejected request to begin session: " << response->error();
-                QCoreApplication::exit(-1);
-                return;
-            }
-        } else {
-            qCritical() << "Daemon did not reply to session begin request";
-            QCoreApplication::exit(-1);
-            return;
-        }
-
-        LoadConfigRequestMessage configRequest;
-        configRequest.setConfig(configProvider.currentConfig());
-        m_connection->sendMessageAndWaitForResponse(configRequest);
-    });
+    Q_EMIT connected(m_connection);
 }
 
 void Client::onDisconnected()
 {
     m_connectionRetryTimer->start();
+    Q_EMIT disconnected();
 }
 
 void Client::onErrorOccurred(QLocalSocket::LocalSocketError error)
 {
     qCDebug(INPUTACTIONS_IPC).noquote().nospace() << "Failed to connect to server: " << error;
     m_connectionRetryTimer->start();
-}
-
-void Client::onConfigChanged(const QString &config)
-{
-    LoadConfigRequestMessage request;
-    request.setConfig(config);
-    m_connection->sendMessage(request);
 }
 
 void Client::connectToDaemon()

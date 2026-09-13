@@ -36,7 +36,7 @@ public:
     Q_INVOKABLE void start();
 
 signals:
-    void messageReceived(std::shared_ptr<Message> message);
+    void messageReceived(std::shared_ptr<const Message> message);
 
 private slots:
     void onNewConnection();

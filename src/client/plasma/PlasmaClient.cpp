@@ -18,6 +18,7 @@
 
 #include "PlasmaClient.h"
 #include <QDBusInterface>
+#include <libinputactions/helpers/QDBusConnection.h>
 
 namespace InputActions
 {
@@ -37,7 +38,7 @@ bool PlasmaClient::initialize()
         return false;
     }
 
-    QDBusInterface scripting("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting");
+    QDBusInterface scripting("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", QDBusConnectionHelpers::sessionBus());
     scripting.call("unloadScript", "inputactions");
     const auto reply = scripting.call("loadScript", KWIN_SCRIPT_PATH, "inputactions");
     if (reply.arguments().size() == 0) {
@@ -45,7 +46,10 @@ bool PlasmaClient::initialize()
     }
 
     const auto scriptId = reply.arguments().at(0).toInt();
-    m_kwinScriptInterface = std::make_unique<QDBusInterface>("org.kde.KWin", "/Scripting/Script" + QString::number(scriptId), "org.kde.kwin.Script");
+    m_kwinScriptInterface = std::make_unique<QDBusInterface>("org.kde.KWin",
+                                                             "/Scripting/Script" + QString::number(scriptId),
+                                                             "org.kde.kwin.Script",
+                                                             QDBusConnectionHelpers::sessionBus());
     m_kwinScriptInterface->call("run");
 
     return true;

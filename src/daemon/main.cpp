@@ -17,21 +17,16 @@
 */
 
 #include "Server.h"
-#include "SessionManager.h"
-#include "input/StandaloneInputBackend.h"
-#include "interfaces/IPCNotificationManager.h"
-#include "interfaces/IPCPlasmaGlobalShortcutInvoker.h"
-#include "interfaces/IPCProcessRunner.h"
+#include "ServerHandler.h"
 #include <QCoreApplication>
 #include <QDir>
+#include <QProcess>
 #include <QThread>
 #include <csignal>
-#include <libinputactions/InputActionsMain.h>
-#include <libinputactions/globals.h>
-#include <libinputactions/interfaces/ConfigProvider.h>
-#include <libinputactions/interfaces/NotificationManager.h>
-#include <libinputactions/scripting/ScriptingEngine.h>
+#include <grp.h>
+#include <linux/prctl.h>
 #include <sys/file.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 
 using namespace InputActions;
@@ -43,29 +38,39 @@ void handleSignal(int signal)
 {
     if (signal == SIGINT) {
         QCoreApplication::quit();
+        std::signal(SIGINT, SIG_DFL);
+    }
+}
+
+void setfacl(const QString &target, QStringList arguments)
+{
+    arguments.push_back(target);
+
+    QProcess process;
+    process.setProgram("setfacl");
+    process.setArguments(arguments);
+    process.start();
+    if (!process.waitForFinished()) {
+        qWarning("setfacl failed: %s", process.errorString().toStdString().c_str());
     }
 }
 
 int main()
 {
-    ScriptingEngine::disabled = true;
-
     if (geteuid()) {
         qCritical() << "The daemon must be run as root.";
         return -1;
     }
 
+    auto *inputActionsGroup = getgrnam("inputactions");
+    if (!inputActionsGroup) {
+        qCritical() << "The 'inputactions' group does not exist.";
+        return -1;
+    }
+
     static int argc = 0;
     QCoreApplication app(argc, nullptr);
-
     std::signal(SIGINT, handleSignal);
-
-    const int minPriority = sched_get_priority_min(SCHED_RR);
-    sched_param sp;
-    sp.sched_priority = minPriority;
-    if (pthread_setschedparam(pthread_self(), SCHED_RR | SCHED_RESET_ON_FORK, &sp) != 0) {
-        qWarning(INPUTACTIONS, "Failed to gain real time thread priority: %s", strerror(errno));
-    }
 
     if (!VAR_RUN_INPUTACTIONS_DIR.exists()) {
         VAR_RUN_INPUTACTIONS_DIR.mkpath(".");
@@ -80,21 +85,16 @@ int main()
         }
     }
 
-    InputActionsMain inputActions;
-    g_inputBackend = std::make_unique<StandaloneInputBackend>();
-    g_notificationManager = std::make_shared<IPCNotificationManager>();
-    g_plasmaGlobalShortcutInvoker = std::make_shared<IPCPlasmaGlobalShortcutInvoker>();
-    g_processRunner = std::make_shared<IPCProcessRunner>();
+    setfacl("/dev/input", {"-Rdm", "g:inputactions:rw"});
+    setfacl("/dev/input", {"-Rm", "g:inputactions:rw"});
+    setfacl("/dev/input", {"-m", "g:inputactions:rwx"});
+    setfacl("/dev/uinput", {"-m", "g:inputactions:rw"});
 
     auto *serverThread = new QThread;
     auto *server = new Server;
     server->moveToThread(serverThread);
 
-    g_sessionManager = std::make_shared<SessionManager>(server);
-    g_configProvider = std::make_shared<ConfigProvider>(); // Config is managed by SessionManager
-
-    inputActions.setMissingImplementations();
-    inputActions.initialize();
+    ServerHandler serverHandler(*server, inputActionsGroup->gr_gid);
 
     QObject::connect(serverThread, &QThread::started, [server]() {
         QMetaObject::invokeMethod(server, "start");

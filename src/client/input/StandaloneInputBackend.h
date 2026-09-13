@@ -21,7 +21,6 @@
 #include "EvdevVirtualKeyboard.h"
 #include "EvdevVirtualMouse.h"
 #include <libinput-cpp/PathContext.h>
-#include <libinput.h>
 #include <libinputactions/input/backends/LibevdevComplementaryInputBackend.h>
 #include <libinputactions/input/backends/LibinputInputBackend.h>
 #include <poll.h>

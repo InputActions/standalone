@@ -27,13 +27,13 @@ export default class MyExtension extends Extension {
     enable() {
         this._dbusDataRequestedSignalSubscription = Gio.DBus.session.signal_subscribe(
             "org.inputactions",
-            "org.inputactions",
-            "environmentStateRequested",
-            "/",
+            "org.inputactions.standalone.DBusEnvironmentStateProvider",
+            "stateRequested",
+            "/org/inputactions/standalone/DBusEnvironmentStateProvider",
             null,
             Gio.DBusSignalFlags.NONE,
             (connection, sender, path, iface, signal, params) => {
-                this._sendData(params.deep_unpack()[0]);
+                this._sendData([]);
             }
         );
 
@@ -175,9 +175,9 @@ export default class MyExtension extends Extension {
 
         Gio.DBus.session.call(
             "org.inputactions",
-            "/",
-            "org.inputactions",
-            "environmentState",
+            "/org/inputactions/standalone/DBusEnvironmentStateProvider",
+            "org.inputactions.standalone.DBusEnvironmentStateProvider",
+            "updateState",
             new GLib.Variant("(s)", [JSON.stringify(data)]),
             null,
             Gio.DBusCallFlags.NONE,

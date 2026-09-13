@@ -17,14 +17,19 @@
 */
 
 #include "Client.h"
-#include "ClientDBusInterface.h"
-#include "ClientMessageHandler.h"
+#include "ClientHandler.h"
 #include "gnome/GNOMEClient.h"
+#include "input/StandaloneInputBackend.h"
+#include "interfaces/DBusEnvironmentStateProvider.h"
 #include "plasma/PlasmaClient.h"
 #include "wayland/WaylandClient.h"
 #include <QCoreApplication>
+#include <QFile>
 #include <QThread>
 #include <csignal>
+#include <libinputactions/InputActionsMain.h>
+#include <libinputactions/interfaces/PointerPositionGetter.h>
+#include <libinputactions/interfaces/WindowProvider.h>
 
 using namespace InputActions;
 
@@ -32,6 +37,7 @@ void handleSignal(int signal)
 {
     if (signal == SIGINT) {
         QCoreApplication::quit();
+        std::signal(SIGINT, SIG_DFL);
     }
 }
 
@@ -41,9 +47,21 @@ int main()
     QCoreApplication app(argc, nullptr);
     std::signal(SIGINT, handleSignal);
 
+    InputActionsMain main;
+    g_inputBackend = std::make_unique<StandaloneInputBackend>();
+
+    auto dbusEnvironmentStateProvider = std::make_shared<DBusEnvironmentStateProvider>();
+    g_pointerPositionGetter = dbusEnvironmentStateProvider;
+    g_windowProvider = dbusEnvironmentStateProvider;
+
+    main.setMissingImplementations();
+    main.initialize();
+
+    Q_EMIT dbusEnvironmentStateProvider->stateRequested();
+
     auto *clientThread = new QThread;
     auto *client = new Client;
-    ClientDBusInterface dbusInterface(client);
+    ClientHandler clientHandler(*client);
 
     client->moveToThread(clientThread);
     QObject::connect(clientThread, &QThread::started, [&client]() {
@@ -51,11 +69,9 @@ int main()
     });
     clientThread->start();
 
-    ClientMessageHandler messageHandler(client);
-
     GNOMEClient gnomeClient;
     PlasmaClient plasmaClient;
-    WaylandClient waylandClient(client);
+    WaylandClient waylandClient(*dbusEnvironmentStateProvider);
     gnomeClient.initialize() || plasmaClient.initialize() || waylandClient.initialize();
 
     return app.exec();

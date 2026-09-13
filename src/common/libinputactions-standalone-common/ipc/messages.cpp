@@ -16,22 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
-#include <QObject>
-#include <libinputactions/interfaces/NotificationManager.h>
+#include "messages.h"
+#include "MessageSocketConnection.h"
 
 namespace InputActions
 {
 
-class IPCNotificationManager
-    : public QObject
-    , public NotificationManager
+void RequestMessageBase::sendResponse(const ResponseMessage &response) const
 {
-public:
-    IPCNotificationManager() = default;
-
-    void sendNotification(const QString &title, const QString &content) override;
-};
+    m_sender->sendMessage(response);
+}
 
 }

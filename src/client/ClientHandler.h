@@ -18,52 +18,32 @@
 
 #pragma once
 
-#include <QDBusConnection>
-#include <QDBusMessage>
-#include <QObject>
-
 namespace InputActions
 {
 
 class Client;
+class Message;
+class MessageSocketConnection;
+class SActivateRequestMessage;
+class SDeactivateRequestMessage;
 
-class ClientDBusInterface : public QObject
+class ClientHandler : public QObject
 {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.inputactions")
 
 public:
-    /**
-     * Registers the interface.
-     */
-    ClientDBusInterface(Client *client);
-
-    /**
-     * Unregisters the interface.
-     */
-    ~ClientDBusInterface() override;
-
-signals:
-    void environmentStateRequested();
-
-public slots:
-    void environmentState(QString state);
-
-    QString deviceList();
-    QString issues();
-    QString recordStroke();
-    QString reloadConfig();
-    QString suspend();
-    QString variables(QString filter = "");
+    ClientHandler(Client &client);
 
 private slots:
-    void onClientConnected();
+    void onConnected(MessageSocketConnection *connection);
+    void onDisconnected();
+    void onMessageReceived(std::shared_ptr<const Message> message);
 
 private:
-    Client *m_client;
+    void activateRequestMessage(std::shared_ptr<const SActivateRequestMessage> message);
+    void deactivateRequestMessage(std::shared_ptr<const SDeactivateRequestMessage> message);
 
-    QDBusConnection m_bus;
-    QDBusMessage m_reply;
+    QString m_tty;
 };
 
 }

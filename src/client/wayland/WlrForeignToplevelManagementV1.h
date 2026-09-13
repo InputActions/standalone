@@ -24,7 +24,7 @@
 namespace InputActions
 {
 
-class Client;
+class DBusEnvironmentStateProvider;
 
 struct WlrForeignToplevelManagementV1Window
 {
@@ -37,7 +37,7 @@ struct WlrForeignToplevelManagementV1Window
 class WlrForeignToplevelManagementV1 : public WaylandProtocol
 {
 public:
-    WlrForeignToplevelManagementV1(Client *client);
+    WlrForeignToplevelManagementV1(DBusEnvironmentStateProvider &dbusEnvironmentStateProvider);
     ~WlrForeignToplevelManagementV1() override;
 
 protected:
@@ -58,7 +58,7 @@ private:
     std::vector<std::unique_ptr<WlrForeignToplevelManagementV1Window>> m_windows;
     WlrForeignToplevelManagementV1Window *m_activeWindow;
 
-    Client *m_client;
+    DBusEnvironmentStateProvider &m_dbusEnvironmentStateProvider;
 
     inline static WlrForeignToplevelManagementV1 *self;
 };

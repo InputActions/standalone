@@ -3,5 +3,5 @@
     "name": "InputActions",
     "description": "GNOME integration for InputActions",
     "version": 1,
-    "shell-version": ["48", "49"]
+    "shell-version": ["48", "49", "50"]
 }

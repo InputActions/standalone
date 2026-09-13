@@ -4,21 +4,26 @@ pkg_search_module(WAYLAND_CLIENT REQUIRED wayland-client)
 
 add_executable(inputactions-client
     gnome/GNOMEClient.cpp
+    input/EvdevVirtualKeyboard.cpp
+    input/EvdevVirtualMouse.cpp
+    input/StandaloneInputBackend.cpp
+    input/StandaloneInputDevice.cpp
+    interfaces/DBusEnvironmentStateProvider.cpp
     plasma/PlasmaClient.cpp
     wayland/WaylandClient.cpp
     wayland/WaylandProtocol.cpp
     wayland/WaylandProtocolManager.cpp
     wayland/WlrForeignToplevelManagementV1.cpp
     Client.cpp
-    ClientDBusInterface.cpp
-    ClientMessageHandler.cpp
+    ClientHandler.cpp
     main.cpp
 )
 
 target_compile_options(inputactions-client PUBLIC -fexceptions)
 target_link_libraries(inputactions-client PRIVATE
+    libinput-cpp
     libinputactions
-    libinputactions-standalone-ipc
+    libinputactions-standalone-common
     ${WAYLAND_CLIENT_LIBRARIES}
 )
 target_include_directories(inputactions-client PRIVATE

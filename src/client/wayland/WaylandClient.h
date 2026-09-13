@@ -25,13 +25,13 @@
 namespace InputActions
 {
 
-class Client;
+class DBusEnvironmentStateProvider;
 class WaylandProtocolManager;
 
 class WaylandClient : public QObject
 {
 public:
-    WaylandClient(Client *client);
+    WaylandClient(DBusEnvironmentStateProvider &dbusEnvironmentStateProvider);
     ~WaylandClient() override;
 
     /**
@@ -47,7 +47,7 @@ private:
     QTimer m_displayDispatchTimer;
     std::unique_ptr<WaylandProtocolManager> m_protocolManager;
 
-    Client *m_client;
+    DBusEnvironmentStateProvider &m_dbusEnvironmentStateProvider;
 };
 
 }
