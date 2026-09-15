@@ -47,7 +47,7 @@ QString EvdevVirtualKeyboard::path() const
     return m_device ? m_device->devNode() : QString();
 }
 
-void EvdevVirtualKeyboard::keyboardKey(KeyboardKey key, bool state)
+void EvdevVirtualKeyboard::doKeyboardKey(KeyboardKey key, bool state)
 {
     if (!m_device) {
         return;
@@ -55,7 +55,6 @@ void EvdevVirtualKeyboard::keyboardKey(KeyboardKey key, bool state)
 
     m_device->writeEvent(EV_KEY, key.scanCode(), state);
     m_device->writeSynReportEvent();
-    VirtualKeyboard::keyboardKey(key, state);
 }
 
 }
