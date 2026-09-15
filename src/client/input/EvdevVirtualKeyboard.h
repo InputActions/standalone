@@ -32,7 +32,8 @@ public:
 
     QString path() const;
 
-    void keyboardKey(KeyboardKey key, bool state) override;
+protected:
+    void doKeyboardKey(KeyboardKey key, bool state) override;
 
 private:
     std::optional<libevdev::UInputDevice> m_device;

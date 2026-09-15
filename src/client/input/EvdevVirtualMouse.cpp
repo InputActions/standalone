@@ -53,7 +53,7 @@ QString EvdevVirtualMouse::path() const
     return m_device ? m_device->devNode() : QString();
 }
 
-void EvdevVirtualMouse::mouseButton(MouseButton button, bool state)
+void EvdevVirtualMouse::doMouseButton(MouseButton button, bool state)
 {
     if (!m_device) {
         return;
@@ -61,10 +61,9 @@ void EvdevVirtualMouse::mouseButton(MouseButton button, bool state)
 
     m_device->writeEvent(EV_KEY, button.scanCode(), state);
     m_device->writeSynReportEvent();
-    VirtualMouse::mouseButton(button, state);
 }
 
-void EvdevVirtualMouse::mouseMotion(const PointF &pos)
+void EvdevVirtualMouse::doMouseMotion(const PointF &pos)
 {
     if (!m_device) {
         return;
@@ -87,7 +86,7 @@ void EvdevVirtualMouse::mouseMotion(const PointF &pos)
     }
 }
 
-void EvdevVirtualMouse::mouseWheel(const PointF &delta)
+void EvdevVirtualMouse::doMouseWheel(const PointF &delta)
 {
     if (!m_device) {
         return;
