@@ -44,6 +44,14 @@ ClientHandler::ClientHandler(Client &client)
     connect(&client, &Client::connected, this, &ClientHandler::onConnected);
     connect(&client, &Client::disconnected, this, &ClientHandler::onDisconnected);
     connect(&client, &Client::messageReceived, this, &ClientHandler::onMessageReceived);
+    deactivate();
+}
+
+void ClientHandler::deactivate()
+{
+    g_mainDbusInterface->setAllowConfigLoading(false);
+    g_inputActions->suspend();
+    g_globalConfig->setAutoReload(false);
 }
 
 void ClientHandler::onConnected(MessageSocketConnection *connection)
@@ -65,7 +73,7 @@ void ClientHandler::onConnected(MessageSocketConnection *connection)
 
 void ClientHandler::onDisconnected()
 {
-    g_inputActions->suspend();
+    deactivate();
 }
 
 void ClientHandler::onMessageReceived(std::shared_ptr<const Message> message)
@@ -89,9 +97,7 @@ void ClientHandler::activateRequestMessage(std::shared_ptr<const SActivateReques
 
 void ClientHandler::deactivateRequestMessage(std::shared_ptr<const SDeactivateRequestMessage> message)
 {
-    g_mainDbusInterface->setAllowConfigLoading(false);
-    g_inputActions->suspend();
-    g_globalConfig->setAutoReload(false);
+    deactivate();
     message->reply();
 }
 
