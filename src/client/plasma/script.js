@@ -35,6 +35,7 @@ pointerPositionTimer.timeout.connect(() => {
         windowUnderPointer = workspace.windowAt(workspace.cursorPos, 1)[0];
         if (previous && previous != windowUnderPointer) {
             previous.captionChanged.disconnect(onWindowUnderPointerCaptionChanged);
+            previous.fullScreenChanged.disconnect(onWindowUnderPointerFullScreenChanged);
             previous.maximizedAboutToChange.disconnect(onWindowUnderPointerMaximizedAboutToChange);
         }
 
@@ -58,6 +59,7 @@ pointerPositionTimer.timeout.connect(() => {
 
         if (windowUnderPointer && previous != windowUnderPointer) {
             windowUnderPointer.captionChanged.connect(onWindowUnderPointerCaptionChanged);
+            windowUnderPointer.fullScreenChanged.connect(onWindowUnderPointerFullScreenChanged);
             windowUnderPointer.maximizedAboutToChange.connect(onWindowUnderPointerMaximizedAboutToChange);
         }
 
@@ -84,9 +86,15 @@ sendData([]);
 function onActiveWindowCaptionChanged() {
     sendData(["active_window_title"]);
 }
+function onActiveWindowFullScreenChanged() {
+    sendData(["active_window_fullscreen"]);
+}
 function onActiveWindowMaximizedAboutToChange(mode) {
     activeWindow.maximized = mode == 3;
     sendData(["active_window_maximized"]);
+}
+function onWindowUnderPointerFullScreenChanged() {
+    sendData(["window_under_pointer_fullscreen"]);
 }
 function onWindowUnderPointerMaximizedAboutToChange(mode) {
     windowUnderPointer.maximized = mode == 3;
@@ -96,9 +104,10 @@ function onWindowUnderPointerCaptionChanged() {
     sendData(["window_under_pointer_title"]);
 }
 
-workspace.windowActivated.connect(w => {
+function onWindowActivated(w) {
     if (activeWindow) {
         activeWindow.captionChanged.disconnect(onActiveWindowCaptionChanged);
+        activeWindow.fullScreenChanged.disconnect(onActiveWindowFullScreenChanged);
         activeWindow.maximizedAboutToChange.disconnect(onActiveWindowMaximizedAboutToChange);
     }
     activeWindow = w;
@@ -114,7 +123,12 @@ workspace.windowActivated.connect(w => {
 
     if (w) {
         w.captionChanged.connect(onActiveWindowCaptionChanged);
+        w.fullScreenChanged.connect(onActiveWindowFullScreenChanged);
         w.maximizedAboutToChange.connect(onActiveWindowMaximizedAboutToChange);
     }
-});
+}
+
+workspace.windowActivated.connect(onWindowActivated);
 workspace.cursorPosChanged.connect(() => pointerPositionChanged = true);
+
+onWindowActivated(workspace.activeWindow);
