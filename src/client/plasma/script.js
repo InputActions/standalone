@@ -132,3 +132,12 @@ workspace.windowActivated.connect(onWindowActivated);
 workspace.cursorPosChanged.connect(() => pointerPositionChanged = true);
 
 onWindowActivated(workspace.activeWindow);
+
+workspace.windowRemoved.connect(w => {
+    if (w == activeWindow) {
+        activeWindow = null;
+    }
+    if (w == windowUnderPointer) {
+        windowUnderPointer = null;
+    }
+});
