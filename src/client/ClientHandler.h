@@ -40,7 +40,7 @@ private slots:
     void onMessageReceived(std::shared_ptr<const Message> message);
 
 private:
-    void deactivate();
+    QFuture<void> deactivate();
 
     void activateRequestMessage(std::shared_ptr<const SActivateRequestMessage> message);
     void deactivateRequestMessage(std::shared_ptr<const SDeactivateRequestMessage> message);

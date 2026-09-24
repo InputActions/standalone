@@ -44,14 +44,15 @@ ClientHandler::ClientHandler(Client &client)
     connect(&client, &Client::connected, this, &ClientHandler::onConnected);
     connect(&client, &Client::disconnected, this, &ClientHandler::onDisconnected);
     connect(&client, &Client::messageReceived, this, &ClientHandler::onMessageReceived);
-    deactivate();
+    g_configLoader->setAllowNonEmptyConfigs(false);
 }
 
-void ClientHandler::deactivate()
+QFuture<void> ClientHandler::deactivate()
 {
-    g_mainDbusInterface->setAllowConfigLoading(false);
-    g_inputActions->suspend();
-    g_globalConfig->setAutoReload(false);
+    g_configLoader->setAllowNonEmptyConfigs(false);
+    return g_configLoader->load({
+        .empty = true,
+    });
 }
 
 void ClientHandler::onConnected(MessageSocketConnection *connection)
@@ -90,15 +91,17 @@ void ClientHandler::onMessageReceived(std::shared_ptr<const Message> message)
 
 void ClientHandler::activateRequestMessage(std::shared_ptr<const SActivateRequestMessage> message)
 {
-    g_mainDbusInterface->setAllowConfigLoading(true);
-    g_configLoader->load();
-    message->reply();
+    g_configLoader->setAllowNonEmptyConfigs(true);
+    g_configLoader->load().then([message]() {
+        message->reply();
+    });
 }
 
 void ClientHandler::deactivateRequestMessage(std::shared_ptr<const SDeactivateRequestMessage> message)
 {
-    deactivate();
-    message->reply();
+    deactivate().then([message]() {
+        message->reply();
+    });
 }
 
 }
