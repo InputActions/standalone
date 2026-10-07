@@ -66,6 +66,11 @@ private:
      */
     bool tryAddEvdevDevice(const QString &path);
     void evdevDeviceRemoved(const QString &path);
+    /**
+     * Removes the device and erases it from m_devices.
+     * @return Iterator following the removed device.
+     */
+    std::vector<std::unique_ptr<StandaloneInputDevice>>::iterator removeDeviceAt(std::vector<std::unique_ptr<StandaloneInputDevice>>::iterator it);
 
     bool handleEvent(StandaloneInputDevice *sender, const libinput::Event &event);
     LibinputEventsProcessingResult handleLibinputEvents(StandaloneInputDevice *device, libinput::PathContext *libinputContext);

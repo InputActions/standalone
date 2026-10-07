@@ -20,6 +20,7 @@
 #include "StandaloneInputDevice.h"
 #include <QDir>
 #include <QSocketNotifier>
+#include <cerrno>
 #include <fcntl.h>
 #include <libevdev-cpp/Device.h>
 #include <libevdev-cpp/UInputDevice.h>
@@ -30,6 +31,7 @@
 #include <libinput-cpp/PointerEvent.h>
 #include <libinput-cpp/TouchEvent.h>
 #include <libinput-cpp/UdevDevice.h>
+#include <libinputactions/globals.h>
 #include <libinputactions/input/devices/InputDeviceState.h>
 #include <libinputactions/input/events.h>
 #include <linux/uinput.h>
@@ -84,14 +86,9 @@ void StandaloneInputBackend::reset()
     m_virtualKeyboard.reset();
     m_virtualMouse.reset();
 
-    for (const auto &device : m_devices) {
-        if (device->properties().grab()) {
-            // The compositor will take long enough to detect device removal that it will start generating key repeat events, reset the device to prevent that
-            device->resetVirtualDeviceState();
-        }
-        removeDevice(device.get());
+    while (!m_devices.empty()) {
+        removeDeviceAt(m_devices.begin());
     }
-    m_devices.clear();
     m_inotifyNotifier->setEnabled(false);
     m_deviceInitializationRetryTimer.stop();
     LibinputInputBackend::reset();
@@ -103,6 +100,10 @@ void StandaloneInputBackend::evdevDeviceAdded(const QString &path)
         return;
     }
 
+    // A node can only be created at a path after the previous one was deleted, so any device still held for this path refers to a dead inode (the IN_DELETE
+    // event may have been missed, e.g. when the node is deleted and recreated in quick succession during a bluetooth reconnect)
+    evdevDeviceRemoved(path);
+
     if (!tryAddEvdevDevice(path)) {
         m_deviceInitializationQueue[path] = 0;
     }
@@ -111,7 +112,8 @@ void StandaloneInputBackend::evdevDeviceAdded(const QString &path)
 bool StandaloneInputBackend::tryAddEvdevDevice(const QString &path)
 {
     for (const auto &device : m_devices) {
-        if (path == m_virtualKeyboard->path() || path == m_virtualMouse->path() || device->isDeviceOwnedByThisDevice(path)) {
+        // Never hold two devices for one path
+        if (path == m_virtualKeyboard->path() || path == m_virtualMouse->path() || device->path() == path || device->isDeviceOwnedByThisDevice(path)) {
             return true;
         }
     }
@@ -143,13 +145,26 @@ bool StandaloneInputBackend::tryAddEvdevDevice(const QString &path)
 
 void StandaloneInputBackend::evdevDeviceRemoved(const QString &path)
 {
-    auto it = std::ranges::find_if(m_devices, [&path](const auto &device) {
-        return device->path() == path;
-    });
-    if (it != m_devices.end()) {
-        removeDevice(it->get());
-        m_devices.erase(it);
+    // Remove all matches, as a missed removal notification followed by node recreation may have resulted in multiple devices with the same path
+    for (auto it = m_devices.begin(); it != m_devices.end();) {
+        if ((*it)->path() == path) {
+            it = removeDeviceAt(it);
+        } else {
+            ++it;
+        }
     }
+}
+
+std::vector<std::unique_ptr<StandaloneInputDevice>>::iterator
+StandaloneInputBackend::removeDeviceAt(std::vector<std::unique_ptr<StandaloneInputDevice>>::iterator it)
+{
+    const auto &device = *it;
+    if (device->properties().grab()) {
+        // The compositor will take long enough to detect device removal that it will start generating key repeat events, reset the device to prevent that
+        device->resetVirtualDeviceState();
+    }
+    removeDevice(device.get());
+    return m_devices.erase(it);
 }
 
 void StandaloneInputBackend::inotifyTimerTick()
@@ -325,6 +340,7 @@ LibinputEventsProcessingResult StandaloneInputBackend::handleLibinputEvents(Stan
 void StandaloneInputBackend::poll()
 {
     std::vector<EvdevEvent> frame;
+    std::vector<StandaloneInputDevice *> deadDevices;
     for (const auto &device : m_devices) {
         if (!device->properties().grab()) {
             handleLibinputEvents(device.get(), device->libinput());
@@ -337,6 +353,15 @@ void StandaloneInputBackend::poll()
             auto flags = status == LIBEVDEV_READ_STATUS_SYNC ? LIBEVDEV_READ_FLAG_SYNC : LIBEVDEV_READ_FLAG_NORMAL;
             status = device->libevdev()->nextEvent(flags, evdevEvent);
             if (status != LIBEVDEV_READ_STATUS_SUCCESS && status != LIBEVDEV_READ_STATUS_SYNC) {
+                if (status < 0 && status != -EAGAIN) {
+                    // The kernel returns ENODEV once the device has been unregistered or the file descriptor revoked, and the descriptor stays readable
+                    // (POLLERR | POLLHUP) forever, remove the device immediately instead of busy-looping until the removal notification arrives, which may have
+                    // already been missed
+                    qWarning(INPUTACTIONS, "Failed to read from device \"%s\" (%d), removing it", device->path().toStdString().c_str(), -status);
+                    deadDevices.push_back(device.get());
+                    frame.clear();
+                    break;
+                }
                 // Handle events generated after a delay, e.g. pointer button after tapping
                 handleLibinputEvents(device.get(), device->libinput());
                 break;
@@ -389,6 +414,15 @@ void StandaloneInputBackend::poll()
         if (device->type() == InputDeviceType::Touchpad && device->physicalState().validTouchPoints().empty()) {
             device->setTouchpadNeutral(true);
             device->setTouchpadBlocked(false);
+        }
+    }
+
+    for (auto *deadDevice : deadDevices) {
+        const auto it = std::ranges::find_if(m_devices, [deadDevice](const auto &device) {
+            return device.get() == deadDevice;
+        });
+        if (it != m_devices.end()) {
+            removeDeviceAt(it);
         }
     }
 }
