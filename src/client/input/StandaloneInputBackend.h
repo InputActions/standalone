@@ -23,10 +23,16 @@
 #include <libinput-cpp/PathContext.h>
 #include <libinputactions/input/backends/LibevdevComplementaryInputBackend.h>
 #include <libinputactions/input/backends/LibinputInputBackend.h>
-#include <poll.h>
+#include <libudev-cpp/Udev.h>
 
 namespace InputActions
 {
+
+namespace libudev
+{
+class Monitor;
+class Udev;
+};
 
 class StandaloneInputDevice;
 
@@ -53,7 +59,6 @@ protected:
     void doInitialize() override;
 
 private slots:
-    void inotifyTimerTick();
     void deviceInitializationRetryTimerTick();
 
 private:
@@ -70,8 +75,8 @@ private:
     bool handleEvent(StandaloneInputDevice *sender, const libinput::Event &event);
     LibinputEventsProcessingResult handleLibinputEvents(StandaloneInputDevice *device, libinput::PathContext *libinputContext);
 
-    int m_inotifyFd;
-    std::unique_ptr<QSocketNotifier> m_inotifyNotifier;
+    libudev::Udev m_udev;
+    std::unique_ptr<libudev::Monitor> m_udevMonitor;
 
     /**
      * Contains devices that have failed to initialize due to the first open failing.

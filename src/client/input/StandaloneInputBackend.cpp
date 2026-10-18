@@ -18,9 +18,6 @@
 
 #include "StandaloneInputBackend.h"
 #include "StandaloneInputDevice.h"
-#include <QDir>
-#include <QSocketNotifier>
-#include <fcntl.h>
 #include <libevdev-cpp/Device.h>
 #include <libevdev-cpp/UInputDevice.h>
 #include <libinput-cpp/Device.h>
@@ -29,11 +26,14 @@
 #include <libinput-cpp/KeyboardEvent.h>
 #include <libinput-cpp/PointerEvent.h>
 #include <libinput-cpp/TouchEvent.h>
-#include <libinput-cpp/UdevDevice.h>
 #include <libinputactions/input/devices/InputDeviceState.h>
 #include <libinputactions/input/events.h>
+#include <libudev-cpp/Device.h>
+#include <libudev-cpp/Enumerate.h>
+#include <libudev-cpp/ListEntry.h>
+#include <libudev-cpp/Monitor.h>
+#include <libudev-cpp/Udev.h>
 #include <linux/uinput.h>
-#include <sys/inotify.h>
 #include <unistd.h>
 
 namespace InputActions
@@ -43,24 +43,12 @@ static constexpr uint32_t MAX_INITIALIZATION_ATTEMPTS = 5;
 
 StandaloneInputBackend::StandaloneInputBackend()
 {
-    m_inotifyFd = inotify_init();
-    fcntl(m_inotifyFd, F_SETFD, FD_CLOEXEC);
-    fcntl(m_inotifyFd, F_SETFL, fcntl(m_inotifyFd, F_GETFL, 0) | O_NONBLOCK);
-
-    m_inotifyNotifier = std::make_unique<QSocketNotifier>(m_inotifyFd, QSocketNotifier::Read);
-    m_inotifyNotifier->setEnabled(false);
-    connect(m_inotifyNotifier.get(), &QSocketNotifier::activated, this, &StandaloneInputBackend::inotifyTimerTick);
-    inotify_add_watch(m_inotifyFd, "/dev/input", IN_CREATE | IN_DELETE);
-
     connect(&m_deviceInitializationRetryTimer, &QTimer::timeout, this, &StandaloneInputBackend::deviceInitializationRetryTimerTick);
     m_deviceInitializationRetryTimer.setInterval(1000);
 }
 
 StandaloneInputBackend::~StandaloneInputBackend()
 {
-    if (m_inotifyFd != -1) {
-        close(m_inotifyFd);
-    }
     reset();
 }
 
@@ -71,11 +59,33 @@ void StandaloneInputBackend::doInitialize()
     m_virtualKeyboard.emplace(virtualKeyboardKeys());
     m_virtualMouse.emplace();
 
-    for (const auto &entry : QDir("/dev/input").entryInfoList(QDir::Files | QDir::NoSymLinks | QDir::System)) {
-        evdevDeviceAdded(entry.filePath());
+    libudev::Enumerate enumerate(m_udev);
+    enumerate.addMatchSubsystem("input");
+    enumerate.addMatchSysName("event*");
+    enumerate.scanDevices();
+
+    for (const auto &entry : enumerate.listEntries()) {
+        if (!entry.name()) {
+            continue;
+        }
+
+        try {
+            const auto device = libudev::Device::newFromSysPath(m_udev, entry.name().value());
+            evdevDeviceAdded(device.devNode());
+        } catch (...) {
+        }
     }
 
-    m_inotifyNotifier->setEnabled(true);
+    m_udevMonitor = libudev::Monitor::newFromNetlink(m_udev, "udev");
+    m_udevMonitor->filterAddMatchSubsystemDevType("input");
+    connect(m_udevMonitor.get(), &libudev::Monitor::deviceAdded, this, [this](const auto &device) {
+        evdevDeviceAdded(device.devNode());
+    });
+    connect(m_udevMonitor.get(), &libudev::Monitor::deviceRemoved, this, [this](const auto &device) {
+        evdevDeviceRemoved(device.devNode());
+    });
+    m_udevMonitor->enableReceiving();
+
     m_deviceInitializationRetryTimer.start();
 }
 
@@ -92,7 +102,7 @@ void StandaloneInputBackend::reset()
         removeDevice(device.get());
     }
     m_devices.clear();
-    m_inotifyNotifier->setEnabled(false);
+    m_udevMonitor.reset();
     m_deviceInitializationRetryTimer.stop();
     LibinputInputBackend::reset();
 }
@@ -117,7 +127,7 @@ bool StandaloneInputBackend::tryAddEvdevDevice(const QString &path)
     }
 
     bool retry{};
-    auto device = StandaloneInputDevice::tryCreate(path, retry);
+    auto device = StandaloneInputDevice::tryCreate(m_udev, path, retry);
     if (!device) {
         return !retry;
     }
@@ -149,29 +159,6 @@ void StandaloneInputBackend::evdevDeviceRemoved(const QString &path)
     if (it != m_devices.end()) {
         removeDevice(it->get());
         m_devices.erase(it);
-    }
-}
-
-void StandaloneInputBackend::inotifyTimerTick()
-{
-    std::array<int8_t, 16 * (sizeof(inotify_event) + NAME_MAX + 1)> buffer{};
-    while (true) {
-        auto length = read(m_inotifyFd, &buffer, sizeof(buffer));
-        if (length <= 0) {
-            break;
-        }
-
-        for (int i = 0; i < length;) {
-            auto *event = (inotify_event *)&buffer[i];
-            const auto path = QString("/dev/input/%1").arg(QString::fromLocal8Bit(event->name, event->len).replace('\0', ""));
-
-            if (event->mask & IN_CREATE) {
-                evdevDeviceAdded(path);
-            } else if (event->mask & IN_DELETE) {
-                evdevDeviceRemoved(path);
-            }
-            i += sizeof(inotify_event) + event->len;
-        }
     }
 }
 

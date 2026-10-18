@@ -20,9 +20,9 @@
 #include <libevdev-cpp/Device.h>
 #include <libevdev-cpp/exceptions.h>
 #include <libinput-cpp/Device.h>
-#include <libinput-cpp/UdevDevice.h>
 #include <libinputactions/input/backends/InputBackend.h>
 #include <libinputactions/input/devices/InputDeviceState.h>
+#include <libudev-cpp/Device.h>
 
 namespace InputActions
 {
@@ -36,7 +36,7 @@ StandaloneInputDevice::StandaloneInputDevice(InputDeviceType type, QString name,
 {
 }
 
-std::unique_ptr<StandaloneInputDevice> StandaloneInputDevice::tryCreate(const QString &path, bool &retry)
+std::unique_ptr<StandaloneInputDevice> StandaloneInputDevice::tryCreate(const libudev::Udev &udev, const QString &path, bool &retry)
 {
     auto libinput = std::make_unique<libinput::PathContext>();
     auto *libinputDevice = libinput->addDevice(path);
@@ -51,16 +51,20 @@ std::unique_ptr<StandaloneInputDevice> StandaloneInputDevice::tryCreate(const QS
     const auto sysName = libinputDevice->sysName();
     InputDeviceType type{};
 
-    const auto udevDevice = libinputDevice->udevDevice();
-    if (udevDevice.propertyValue("ID_INPUT_MOUSE")) {
-        type = InputDeviceType::Mouse;
-    } else if (udevDevice.propertyValue("ID_INPUT_KEYBOARD")) {
-        type = InputDeviceType::Keyboard;
-    } else if (udevDevice.propertyValue("ID_INPUT_TOUCHPAD")) {
-        type = InputDeviceType::Touchpad;
-    } else if (udevDevice.propertyValue("ID_INPUT_TOUCHSCREEN")) {
-        type = InputDeviceType::Touchscreen;
-    } else {
+    try {
+        const auto udevDevice = libudev::Device::newFromSubsystemSysName(udev, "input", sysName);
+        if (udevDevice.propertyValue("ID_INPUT_MOUSE")) {
+            type = InputDeviceType::Mouse;
+        } else if (udevDevice.propertyValue("ID_INPUT_KEYBOARD")) {
+            type = InputDeviceType::Keyboard;
+        } else if (udevDevice.propertyValue("ID_INPUT_TOUCHPAD")) {
+            type = InputDeviceType::Touchpad;
+        } else if (udevDevice.propertyValue("ID_INPUT_TOUCHSCREEN")) {
+            type = InputDeviceType::Touchscreen;
+        } else {
+            return {};
+        }
+    } catch (...) {
         return {};
     }
 

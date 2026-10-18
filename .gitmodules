@@ -4,3 +4,6 @@
 [submodule "lib/libinput-cpp"]
 	path = lib/libinput-cpp
 	url = https://github.com/InputActions/libinput-cpp
+[submodule "lib/libudev-cpp"]
+	path = lib/libudev-cpp
+	url = https://github.com/InputActions/libudev-cpp
