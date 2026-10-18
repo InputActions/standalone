@@ -24,6 +24,7 @@ target_link_libraries(inputactions-client PRIVATE
     libinput-cpp
     libinputactions
     libinputactions-standalone-common
+    libudev-cpp
     ${WAYLAND_CLIENT_LIBRARIES}
 )
 target_include_directories(inputactions-client PRIVATE

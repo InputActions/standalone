@@ -37,12 +37,17 @@ namespace libinput
 class Device;
 }
 
+namespace libudev
+{
+class Udev;
+}
+
 class StandaloneInputDevice : public InputDevice
 {
 public:
     Q_DISABLE_COPY_MOVE(StandaloneInputDevice);
 
-    static std::unique_ptr<StandaloneInputDevice> tryCreate(const QString &path, bool &retry);
+    static std::unique_ptr<StandaloneInputDevice> tryCreate(const libudev::Udev &udev, const QString &path, bool &retry);
 
     const QString &path() const { return m_path; }
 
