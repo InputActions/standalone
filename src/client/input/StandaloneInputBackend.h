@@ -62,6 +62,8 @@ private slots:
     void deviceInitializationRetryTimerTick();
 
 private:
+    using DeviceList = std::vector<std::unique_ptr<StandaloneInputDevice>>;
+
     void poll();
 
     void evdevDeviceAdded(const QString &path);
@@ -71,6 +73,11 @@ private:
      */
     bool tryAddEvdevDevice(const QString &path);
     void evdevDeviceRemoved(const QString &path);
+    /**
+     * Removes the device and erases it from m_devices.
+     * @return Iterator following the removed device.
+     */
+    DeviceList::iterator removeDeviceAt(DeviceList::iterator it);
 
     bool handleEvent(StandaloneInputDevice *sender, const libinput::Event &event);
     LibinputEventsProcessingResult handleLibinputEvents(StandaloneInputDevice *device, libinput::PathContext *libinputContext);
@@ -85,7 +92,7 @@ private:
     std::map<QString, uint32_t> m_deviceInitializationQueue;
     QTimer m_deviceInitializationRetryTimer;
 
-    std::vector<std::unique_ptr<StandaloneInputDevice>> m_devices;
+    DeviceList m_devices;
     std::optional<EvdevVirtualKeyboard> m_virtualKeyboard;
     std::optional<EvdevVirtualMouse> m_virtualMouse;
 };
