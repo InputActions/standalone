@@ -194,7 +194,8 @@ void StandaloneInputBackend::deviceInitializationRetryTimerTick()
         const auto &device = it->get();
 
         if (!device->isLibinputEventInjectionDeviceInitialized() && device->tryInitializeLibinputEventInjectionDevice() == MAX_INITIALIZATION_ATTEMPTS) {
-            it = m_devices.erase(it);
+            qWarning(INPUTACTIONS, "Failed to add device \"%s\" to libinput, removing it", device->path().toStdString().c_str());
+            it = removeDeviceAt(it);
             continue;
         }
 
